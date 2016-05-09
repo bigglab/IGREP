@@ -54,7 +54,7 @@ class GermlineDB:
 	def GetAllDocInfo(self):#return results of all documents but leave out information regarding sequences
 		cursor = self.db.find({'GERMLINE_GENES':0})
 	
-	def UniqueSpecies(self);
+	def UniqueSpecies(self):
 		pass
 	
 	def UniqueLoci(self):

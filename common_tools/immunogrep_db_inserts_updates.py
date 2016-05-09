@@ -215,8 +215,8 @@ def merge_and_split_db_files(filename):
 			
 	#now split all of the files into multiple little files so we can use multithreading 
 	created_files = useful.split_files_by_seq(filename,multiprocessing_threads,1,False)
-	os.remove(filename)
-	os.remove(renamed_input_file)
+	if os.path.isfile(filename): os.remove(filename)
+	if os.path.isfile(renamed_input_file): os.remove(renamed_input_file)
 	return created_files
 
 
@@ -288,7 +288,7 @@ def benni_insert_seqs_from_file(filename,exp_id='',append_seqs = False,bulk_seqs
 	
 	#delete temp database files 
 	for fn in inputs:
-		os.remove(fn)
+		if os.path.isfile(fn): os.remove(fn)
 	#os.system("rm -r '{0}'".format(new_folder))
 	
 	

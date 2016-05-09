@@ -11,6 +11,7 @@ import json
 import os
 import sys
 import re
+import shlex
 
 import subprocess
 import traceback
@@ -44,7 +45,7 @@ import immunogrep_cdr3_tools as CDR3tools
 try:
 	import immunogrep_fft_align_tools as fftaligner	
 	from immunogrep_isotype_fft import defaultBarcodes		
-	isotypeworking = True		
+	isotypeworking = True	
 except:			
 	isotypeworking = False
 
@@ -131,6 +132,8 @@ def igfft_multiprocess(input_file, species, locus, file_type=None, output_dir=No
 		5) Annotate V germlines of a FASTQ file using a custom v germline set
 		>>> igfft_multiprocess(file.fastq, germline_source="custom", custom_germline_file_loc={'v': '~/common_tools/igfft_germline_files/homosapiens/v/homosapiens_igh_v.txt'})	
 	"""
+	print '{}.{}'.format( __name__, 'igfft_multiprocess')
+
 	if not file_type:
 		# Attempt to guess filetype
 		tempfile = readwrite.immunogrepFile(input_file)
@@ -180,6 +183,9 @@ def igfft_multiprocess(input_file, species, locus, file_type=None, output_dir=No
 			queue => this uses multithreading queues to keep track of what files were genreated in each process/thread
 			index => this the number of the thread/process being run (makes it easy for sorting the results so that they mach the order they were input)
 		"""
+		# @Dave - make sure we redirect all output to STDOUT
+		# sys.stdout = open(str(os.getpid()) + ".out", "w")
+
 		# Filename created by igfft program	
 		outfile_igfft = output_file_prefix + '.igfft.alignment'
 		# Filename created by parsing program
@@ -195,10 +201,13 @@ def igfft_multiprocess(input_file, species, locus, file_type=None, output_dir=No
 		outfile_queue.put([outfile_annotation, outfile_igfft, index])		
 		
 	if num_processes == 1:
+		print 'Running igfft as a single process.'
 		# No need to muliprocess,so just run function 
 		calligfft(input_file, of1_prefix)				
 		final_files = outfile_queue.get()[0:2]
 	else:			
+		print 'Running igfft as multiple processes.'
+
 		# First split files into mulitple small files 
 		if file_type.upper() == 'FASTQ':
 			split_files = useful.split_files_by_seq(input_file, num_processes, number_lines_per_seq=4, contains_header_row=False)
@@ -234,7 +243,7 @@ def igfft_multiprocess(input_file, species, locus, file_type=None, output_dir=No
 		# delete split files and delete any files created from split files
 		purge(split_files)		
 		if delete_alignment_file:
-			os.remove(of1_prefix + '.igfft.alignment')
+			if os.path.isfile(of1_prefix + '.igfft.alignment'): os.remove(of1_prefix + '.igfft.alignment')
 			alignment_file = ''
 		else:
 			alignment_file = of1_prefix + '.igfft.alignment'
@@ -305,6 +314,10 @@ def run_igfft(dataset_path, germline_source="default", germlines=None, outfile=N
 		>>>run_igfft("folder/filetest.fastq", germlines={'SPECIES': 'Homo sapiens', 'LOCUS':['IGH', 'IGK', 'IGL']}, variable_parameters={"num_hits": 2})		
 	"""
 	
+	print '({}) Preparing to run IGFFT'.format( os.getpid() )
+	sys.stdout.flush()
+
+
 	# first go through the variable germlines to figure out the germline files to use 
 	global databaseFolder
 	default_germline_folder = databaseFolder
@@ -433,11 +446,11 @@ def run_igfft(dataset_path, germline_source="default", germlines=None, outfile=N
 	if 'jscore_cutoff' not in variable_parameters:
 		variable_parameters['jscore_cutoff'] = 10
 
-	print('\n\nRunning IgFFT using the following settings:\n')
+	print '({}) Running IgFFT using the following settings:'.format(os.getpid())
 	pprint(variable_parameters)		
 	running_program_text = "Input file location: {0}\n".format(tempFile)
 	running_program_text += "Output file will be saved as: {0}\n".format(outfile)
-	running_program_text += "IgFFT Run has started at {0}\n".format(strftime("%a, %d %b %Y %X +0000", gmtime()))			
+	running_program_text += "({1}) IgFFT run started at {0}\n".format(strftime("%a, %d %b %Y %X +0000", gmtime()), os.getpid())			
 	# NOW RUN THE BINARY 
 	print(running_program_text)
 	command_string = '''"{1}" "{0}" '''.format(tempFile, igfft_location)	
@@ -450,19 +463,44 @@ def run_igfft(dataset_path, germline_source="default", germlines=None, outfile=N
 			command_string += '-{0} {1} '.format(var, ' '.join(newsets))
 			variable_parameters[var] = [os.path.basename(n) for n in newsets]
 		else:
-			command_string += '-{0} {1} '.format(var, variable_parameters[var])					
-	success = subprocess.call(command_string, shell=True)		
-	if success > 0:
+			command_string += '-{0} {1} '.format(var, variable_parameters[var])
+	# ***** @Dave ***** #					
+	# success = subprocess.call(command_string, shell=True)		
+	# if success > 0:
+	# 	raise Exception('Error encountered during igfft annotation')
+
+
+
+	try:
+		command_line_args = shlex.split(command_string)
+		command_line_process = subprocess.Popen( command_line_args , stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize = 1 )
+
+		for line in iter(command_line_process.stdout.readline, b''):
+			line = line.strip()
+			print '({}) {}'.format( os.getpid(), line )
+
+		response, error = command_line_process.communicate()
+		command_line_process.stdout.close()
+		command_line_process.wait()
+	except subprocess.CalledProcessError as error:
+		error = error.output
+	   	print 'Error occured: {}'.format(error)
+	   	success = subprocess.call(command_string, shell=True)		
+		if success > 0:
+			raise Exception('Error encountered during igfft annotation')
+
+	if error:
 		raise Exception('Error encountered during igfft annotation')
 
 	# program complete 
-	print("Analysis Completed at {0}\nAnalysis saved to: {1}\n\n\n".format(strftime("%a, %d %b %Y %X +0000", gmtime()), outfile))	
+	print "({1}) Analysis Completed at {0}\nAnalysis saved to: {1}\n\n\n".format(strftime("%a, %d %b %Y %X +0000", gmtime()), outfile, os.getpid())
 	if os.path.isfile(tempFile + '.convert_tab.txt'):
 		# c++ program produces this, just delete it
 		os.remove(tempFile + '.convert_tab.txt')
+
 	if deletetemp:
 		# delete any temp files that were made 
-		os.remove(tempFile)
+		if os.path.isfile(tempFile): os.remove(tempFile)
 
 	command = variable_parameters
 	# Dont store output path 
@@ -601,7 +639,7 @@ def parse_alignment_file(annotatedFile, outfile=None, annotation_settings={}, co
 		command_val['Fix Mutations'] = 'WhenStopCodon'
 	commandString = json.dumps(command_val)
 	
-	isostring = '\t\tPerforming isotyping on sequences using provided barcodes: ' + '\n' if 'isotype' in annotation_settings else ''	
+	isostring = '\t\t({}) Performing isotyping on sequences using provided barcodes: '.format(os.getpid()) + '\n' if 'isotype' in annotation_settings else ''	
 	parse_igfft_notification = '''
 	The resulting annotation output will be parsed using the following settings:
 	\tMinimum alignment length cutoff: {0},
@@ -1078,11 +1116,13 @@ def parse_alignment_file(annotatedFile, outfile=None, annotation_settings={}, co
 		print("The analysis has completed. However, {0} of the {1} total sequences analyzed contained errors when parsing the file. Please refer to the error log file to debug possible errors".format(str(total_parsing_errors), str(numSeqs)))
 		resulting_files.append(outfile_errors)
 	else:
-		os.remove(outfile_errors)		
+		if os.path.isfile(outfile_errors): os.remove(outfile_errors)		
 		resulting_files.append('')		
 	
+	print '({}) Isotyping sequences complete.'.format(os.getpid())
+
 	if unknown_hits == 0:
-		os.remove(outfile_unknown_rec)		
+		if os.path.isfile(outfile_unknown_rec): os.remove(outfile_unknown_rec)		
 		resulting_files.append('')
 	else:
 		resulting_files.append(outfile_unknown_rec)	
@@ -1495,7 +1535,8 @@ def GetDefaultParameters():
 			'times_above_ratio': None,
 			's_fft': None						
 		}
-	os.remove('defaultsettings_fftprogram.txt')
+	if os.path.isfile('defaultsettings_fftprogram.txt'):
+		os.remove('defaultsettings_fftprogram.txt')
 
 	return default_settings
 

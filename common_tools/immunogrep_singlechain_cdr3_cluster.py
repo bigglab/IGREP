@@ -877,14 +877,14 @@ def parse_sorted_paired_file(pairing_temp_file,suffix):
 		with open(usearch_cluster_file,'w') as w:
 			pass
 	
-	os.remove(dict_summary+'.sorted')
-	os.remove(collapsed_output_file+'.presorted')
+	if os.path.isfile(dict_summary+'.sorted'): os.remove(dict_summary+'.sorted')
+	if os.path.isfile(collapsed_output_file+'.presorted'): os.remove(collapsed_output_file+'.presorted')
 	
 	print('Creating a sorted line-by-line cluster file')
 	os.rename(dict_summary,dict_summary+'.presorted')	
 	final_sort = '''sort -T "{1}" -t '\t' "{0}.presorted" -k1,1nr | gawk 'BEGIN{{FS="\t"}};{{print $2 > "{0}"}}' '''.format(dict_summary,my_folder)	
 	subprocess.call(final_sort,shell=True)	
-	os.remove(dict_summary+'.presorted')
+	if os.path.isfile(dict_summary+'.presorted'): os.remove(dict_summary+'.presorted')
 	
 	num_unique_h_l = len(cdrh3_l3_barcode_dict)
 	cdrh3_l3_barcode_dict = {}
@@ -1169,7 +1169,7 @@ def add_to_dict_memory_safe(list_of_files,list_of_filetypes,required_field_names
 		num_unique_cdr3_pair_above1 = useful.file_line_count(usearch_cluster_file)/2
 	else:
 		num_unique_cdr3_pair_above1 = 0
-	os.remove(pairing_temp_file+'.vdj.txt')
+	if os.path.isfile(pairing_temp_file+'.vdj.txt'): os.remove(pairing_temp_file+'.vdj.txt')
 	#os.remove(pairing_temp_file)				
 				
 	print 'Summary: '

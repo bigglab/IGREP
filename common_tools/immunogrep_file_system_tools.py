@@ -398,7 +398,7 @@ def unzip_files(file_name,output_dir = None,copy_zip_file_as_prefix=False):
 	unzip_files_in_folder(sub_folder,ext_only,move_all_files_to_folder_path,copy_zip_file_as_prefix)
 	for each_file in file_name:		
 		if os.path.isfile(sub_folder+os.path.basename(each_file)):
-			os.remove(sub_folder+os.path.basename(each_file))
+			if os.path.isfile(sub_folder+os.path.basename(each_file)): os.remove(sub_folder+os.path.basename(each_file))
 	
 	files_created = []
 	

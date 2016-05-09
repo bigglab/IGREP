@@ -557,10 +557,10 @@ def parseMIXCR(originalfileloc,resultfileloc,inputype,outfile=None,header_var='d
 	unfound_seqs.close()
 	
 	if errors==0:
-		os.remove(resultfileloc+'.errorlog.txt')
+		if os.path.isfile(resultfileloc+'.errorlog.txt'): os.remove(resultfileloc+'.errorlog.txt')
 	
 	if notfound==0:
-		os.remove(resultfileloc+'.notfound.txt')
+		if os.path.isfile(resultfileloc+'.notfound.txt'): os.remove(resultfileloc+'.notfound.txt')
 	t2 =time.time()
 	print(str(t2-t1))
 	return outfile

@@ -609,7 +609,7 @@ def add_to_dict(list_of_files, list_of_filetypes, required_field_names, producti
 	# Sort all sequences sent to file by the full code field (the last column in file)
 	my_folder = os.path.dirname(pairing_temp_file)
 	subprocess.call('''sort -T "{2}" -t '\t' "{0}" -k{1},{1} > "{0}.sorted" '''.format(pairing_temp_file, str(fullcode_column), my_folder), shell=True)	
-	os.remove(pairing_temp_file)
+	if os.path.isfile(pairing_temp_file): os.remove(pairing_temp_file)
 	print('File sorted')	
 	return [pairing_temp_file + '.sorted', annotation_file_writing, ab_field_loc]
 	
@@ -1040,18 +1040,18 @@ def parse_sorted_paired_file(pairing_temp_file, column_names):
 	if not os.path.isfile(usearch_cluster_file):
 		with open(usearch_cluster_file, 'w') as w:
 			pass
-	os.remove(dict_summary + '.sorted')
-	os.remove(collapsed_output_file + '.presorted')
+	if os.path.isfile(dict_summary + '.sorted'): os.remove(dict_summary + '.sorted')
+	if os.path.isfile(collapsed_output_file + '.presorted'): os.remove(collapsed_output_file + '.presorted')
 	print('Creating a sorted line-by-line cluster file')
 	os.rename(dict_summary, dict_summary + '.presorted')	
 	final_sort = '''sort -T "{1}" -t '\t' "{0}.presorted" -k1,1nr | awk 'BEGIN{{FS="\t"}};{{print $2>"{0}"}}' '''.format(dict_summary, my_folder)	
 	subprocess.call(final_sort, shell=True)	
-	os.remove(dict_summary + '.presorted')	
+	if os.path.isfile(dict_summary + '.presorted'): os.remove(dict_summary + '.presorted')	
 	stats.num_unique_cdrh3_l3_pair = len(cdrh3_l3_barcode_dict)
 	cdrh3_l3_barcode_dict = {}
 	del cdrh3_l3_barcode_dict
 	stats.num_unique_cdrh3_l3_pair_above1 = useful.file_line_count(usearch_cluster_file) / 2
-	os.remove(pairing_temp_file)
+	if os.path.isfile(pairing_temp_file): os.remove(pairing_temp_file)
 	return mapping_dict
 
 
@@ -1102,7 +1102,7 @@ def cluster_paired_seqs(cluster_cutoff):
 	gene_hist(clustered_dict_raw, summary_file, 3)
 	gene_hist(clustered_dict_raw, summary_file, 4)
 	gene_hist(clustered_dict_raw, summary_file, 5)
-	os.remove(centroid_path)
+	if os.path.isfile(centroid_path): os.remove(centroid_path)
 	return number_of_clusters
 
 
@@ -1293,7 +1293,7 @@ def GenerateAnnotationFile(annotated_file_lists, cluster_val, mapping_dict, usea
 						output[con_field] = d[cdr3_clusters[pair]]['con']
 				outfile.write('\t'.join(output) + '\n')
 				
-		os.remove(file_info['filename'] + '.temp')
+		if os.path.isfile(file_info['filename'] + '.temp'): os.remove(file_info['filename'] + '.temp')
 				
 
 def WriteSummaryFile(annotated_file_paths, stats, cluster, num_clustered):

@@ -9,7 +9,7 @@ Steps of pipeline:
 	6) Run pairing
 """
 
-import sys
+import sys, inspect
 import os
 # LOAD IGREP SCRIPTS INTO PYTHON PATH
 script_path = os.path.dirname(os.path.abspath(__file__))
@@ -62,8 +62,13 @@ annotation_cluster_cutoff = 0.9
 
 
 def run_gglab_pipeline(input_files, species, loci, group_name=''):
+	print '{}.{}'.format(__name__, inspect.stack()[0][3])
+
+
+	annotated_files = []
+
 	# Unzip files
-	print('Processing raw fastq files')
+	print('Processing raw fastq files for iggft single.')
 	processed_files = []
 	for i, f in enumerate(input_files):
 		folder_path = os.path.dirname(f)
@@ -74,10 +79,19 @@ def run_gglab_pipeline(input_files, species, loci, group_name=''):
 		annotated_files.append(annotated_f[0])
 	output_file_list = ','.join(annotated_files)
 	print output_file_list
+	print 'Processing complete.'
 	return output_file_list
 
 		
 if __name__ == "__main__":
+
+	# reduce the standard out buffer size to nothing
+	# automatically flushes buffer with every print statement
+	# forces each subprocess to report print statements
+	unbuffered = os.fdopen(sys.stdout.fileno(), 'w', 0)
+	sys.stdout = unbuffered
+
+
 	arguments = sys.argv[1:]
 	argnum = 0
 	fastq_files = []

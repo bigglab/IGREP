@@ -527,7 +527,7 @@ class immunogrepFile():
 					check=True
 				except:	
 					check=False
-			os.remove(temp_file)
+			if os.path.isfile(temp_file): os.remove(temp_file)
 			return check
 		except:
 			return False
@@ -557,7 +557,7 @@ class immunogrepFile():
 					check=True
 				except:	
 					check=False
-			os.remove(temp_file)
+			if os.path.isfile(temp_file): os.remove(temp_file)
 			return check
 		except:
 			return False

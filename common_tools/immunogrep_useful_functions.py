@@ -47,7 +47,7 @@ def purge(filelist):
 	for f in filelist:
 		f = f.replace('*', '\*')
 		for filename in glob.glob(f + "*"):
-			os.remove(filename)	
+			if os.path.isfile(filename): os.remove(filename)	
 
 def get_stdout(bash_command):
 	"""
@@ -379,7 +379,8 @@ def Write_Single_Field(filename=None,outfile_location=None,field=None,count_fiel
 					outfile.write(value+'\t'+count+'\n')#write sequence to new file
 					total_field+=1
 	except Exception as e:
-		os.remove(outfile_location)#("rm '{0}'".format(outfile_location))
+		if os.path.isfile(outfile_location): os.remove(outfile_location)
+		#("rm '{0}'".format(outfile_location))
 		print_error(e)
 
 	return [total_data,total_field]
@@ -470,7 +471,7 @@ def count_unique_values(filelocation=None,output_filelocation=None,field=None,co
 		#os.system(bash_command)
 		subprocess.call(bash_command,shell=True)
 		count_sorted_seqs(output_filename2,unique_counts)
-		os.remove(output_filename2)
+		if os.path.isfile(output_filename2): os.remove(output_filename2)
 		#os.system("rm '{0}'".format(output_filename2))
 		#print datetime.now()
 		###END OF MEMORY SMART BUT SLOER FUNCTION ################
@@ -623,7 +624,7 @@ def LoopStatus(counter,totalSeq,perIndicate,startPer,div='',addedInfo=None):
     """
 	percentDone = int(counter/float(totalSeq)*100)
 	if percentDone%perIndicate==0 and percentDone>startPer:
-		stringvar ='{0}% percent done. Time: {1}'.format(str(percentDone),str(datetime.now()))
+		stringvar ='({2}) {0}% percent done. Time: {1}'.format(str(percentDone),str(datetime.now()), os.getpid() )
 		if addedInfo:
 			stringvar+='\n{0}\n\n'.format(addedInfo)
 		print(stringvar)
@@ -647,7 +648,7 @@ def LoopStatusGen(totalSeq,perIndicate,addedInfo=None):
 	while True:
 		percentDone = int(counter/float(totalSeq)*100)
 		if percentDone%perIndicate==0 and percentDone>startPer:
-			stringvar ='{0}% percent done. Time: {1}'.format(str(percentDone),str(datetime.now()))
+			stringvar ='({2}) {0}% percent done. Time: {1}'.format(str(percentDone),str(datetime.now()), os.getpid())
 			if addedInfo:
 				stringvar+='\n{0}\n\n'.format(addedInfo)
 

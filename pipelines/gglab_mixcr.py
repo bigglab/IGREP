@@ -60,6 +60,8 @@ annotation_cluster_cutoff = 0.9
 
 
 def run_gglab_pipeline(input_files, species, loci, group_name=''):
+	print inspect.stack()[0][3]
+
 	# Unzip files
 	print('Processing raw fastq files')
 	processed_files = []
@@ -94,7 +96,7 @@ def run_gglab_pipeline(input_files, species, loci, group_name=''):
 		pear_results = processing.run_pear(input_files[0], input_files[1], working_directory=folder_path, parameters=pairing_parameters, num_threads=number_threads, memory=pear_memory)[0]		
 		# Run quality filtering
 		filtered_file = fastx.Run_Quality_Filter(pear_results, output_dir=folder_path, quality=quality_cutoff, percent=percent_bases)		
-		os.remove(pear_results)
+		if os.path.isfile(pear_results): os.remove(pear_results)
 		processed_files.append(filtered_file)
 	
 	print('Annotating processed fastq files')

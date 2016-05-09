@@ -62,6 +62,8 @@ annotation_cluster_cutoff = 0.9
 
 
 def run_gglab_pipeline(input_files, species, loci, group_name=''):
+	print inspect.stack()[0][3]
+
 	# Unzip files
 	print('Processing raw fastq files')
 	processed_files = []
@@ -80,7 +82,7 @@ def run_gglab_pipeline(input_files, species, loci, group_name=''):
 		trimmedf = processing.run_trimmomatic(f, folder_path, method, phred_encode, trimming_parameters)[0]		
 		# Run quality filtering
 		filtered_trimmed_file = fastx.Run_Quality_Filter(trimmedf, output_dir=folder_path, quality=quality_cutoff, percent=percent_bases)		
-		os.remove(trimmedf)
+		if os.path.isfile(trimmedf): os.remove(trimmedf)
 		processed_files.append(filtered_trimmed_file)
 	
 	print('Annotating processed fastq files')
