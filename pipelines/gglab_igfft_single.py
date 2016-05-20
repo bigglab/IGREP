@@ -64,7 +64,7 @@ annotation_cluster_cutoff = 0.9
 def run_gglab_pipeline(input_files, species, loci, group_name=''):
 	# Unzip files
 	print('Processing raw fastq files')
-	processed_files = []
+	annotated_files = []
 	for i, f in enumerate(input_files):
 		folder_path = os.path.dirname(f)
 		if f.endswith('.gz'):
